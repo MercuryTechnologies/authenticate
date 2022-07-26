@@ -278,7 +278,8 @@ signOAuth' oa crd withHash add_auth req = do
              . encode
              . BSL.toStrict
              . bytestringDigest
-             . sha1
+             -- TODO specify as a function parameter
+             . sha256
              . BSL.fromStrict) `liftM` loadBodyBS req
     -- encodeHash (Just h) = "oauth_body_hash=\"" `BS.append` paramEncode h `BS.append` "\","
     -- encodeHash Nothing  = ""
