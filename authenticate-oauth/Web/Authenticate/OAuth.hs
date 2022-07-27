@@ -4,8 +4,8 @@ module Web.Authenticate.OAuth
     ( -- * Data types
       OAuth, def, newOAuth, oauthServerName, oauthRequestUri, oauthAccessTokenUri,
       oauthAuthorizeUri, oauthSignatureMethod, oauthConsumerKey,
-      oauthConsumerSecret, oauthCallback, oauthRealm, oauthVersion,
-      OAuthVersion(..), SignMethod(..), Credential(..), OAuthException(..),
+      oauthConsumerSecret, oauthCallback, oauthRealm, oauthVersion, oauthBodyHashMethod,
+      OAuthVersion(..), SignMethod(..), Credential(..), OAuthException(..), BodyHashMethod(..),
       -- ** Access token request
       AccessTokenRequest,
       defaultAccessTokenRequest,
@@ -103,6 +103,8 @@ data OAuth = OAuth { oauthServerName      :: String -- ^ Service name (default: 
                    -- ^ Optional authorization realm (default: @Nothing@)
                    , oauthVersion         :: OAuthVersion
                    -- ^ OAuth spec version (default: 'OAuth10a')
+                   , oauthBodyHashMethod  :: BodyHashMethod
+                   -- ^ OAuth body hash method (default: 'SHA1')
                    } deriving (Show, Eq, Read, Data, Typeable)
 
 
@@ -124,6 +126,7 @@ newOAuth = OAuth { oauthSignatureMethod = HMACSHA1
                  , oauthConsumerKey = error "You MUST specify oauthConsumerKey parameter."
                  , oauthConsumerSecret = error "You MUST specify oauthConsumerSecret parameter."
                  , oauthVersion = OAuth10a
+                 , oauthBodyHashMethod = SHA1
                  }
 
 instance Default OAuth where
@@ -140,6 +143,10 @@ data SignMethod = PLAINTEXT
                 | RSASHA512 PrivateKey
                   deriving (Show, Eq, Read, Data, Typeable)
 
+-- | Data type for body hash method.
+data BodyHashMethod = SHA1
+                    | SHA256
+                      deriving (Show, Eq, Read, Data, Typeable)
 
 newtype OAuthException = OAuthException String
                       deriving (Show, Eq, Data, Typeable)
@@ -274,12 +281,7 @@ signOAuth' oa crd withHash add_auth req = do
   where -- adding extension https://oauth.googlecode.com/svn/spec/ext/body_hash/1.0/oauth-bodyhash.html
     moauth_body_hash = if not withHash || isBodyFormEncoded (requestHeaders req)
           then return Nothing
-          else (Just
-             . encode
-             . BSL.toStrict
-             . bytestringDigest
-             . sha1
-             . BSL.fromStrict) `liftM` loadBodyBS req
+          else bodyHash req (oauthBodyHashMethod oa)
     -- encodeHash (Just h) = "oauth_body_hash=\"" `BS.append` paramEncode h `BS.append` "\","
     -- encodeHash Nothing  = ""
     addHashToCred (Just h) = insert "oauth_body_hash" h
@@ -347,12 +349,7 @@ checkOAuth oa crd req = if isBodyFormEncoded origHeaders then checkOAuthB oa crd
     moauth_body_hash_orig = join $ (fmap snd . List.find ( ("oauth_body_hash" ==) . fst)) `liftM` authParams
     moauth_body_hash = if moauth_body_hash_orig == Nothing
           then return Nothing
-          else (Just
-             . encode
-             . BSL.toStrict
-             . bytestringDigest
-             . sha1
-             . BSL.fromStrict) `liftM` loadBodyBS req
+          else bodyHash req (oauthBodyHashMethod oa)
     addHashToCred (Just h) = insert "oauth_body_hash" h
     addHashToCred Nothing  = id
 
@@ -374,7 +371,17 @@ checkOAuthB oa crd req0 = do
                    (sig, h2) = BS.breakSubstring "&" $ BS.drop 17 r
                in (sig, h1 `BS.append` h2)
 
-
+bodyHash :: MonadIO m => Request -> BodyHashMethod -> m (Maybe BS.ByteString)
+bodyHash req bodyHashMethod =
+  ( Just
+  . encode
+  . BSL.toStrict
+  . hash
+  . BSL.fromStrict) `liftM` loadBodyBS req
+  where
+    hash = case bodyHashMethod of
+      SHA1 -> bytestringDigest . sha1
+      SHA256 -> bytestringDigest . sha256
 
 ----------------------------------------------------------------------
 -- Temporary credentails
