@@ -391,8 +391,8 @@ bodyHash req bodyHashMethod =
 -- | Get temporary credential for requesting acces token.
 getTemporaryCredential :: MonadIO m
                        => OAuth         -- ^ OAuth Application
-                       -> Manager
                        -> Credential
+                       -> Manager
                        -> m Credential -- ^ Temporary Credential (Request Token & Secret).
 getTemporaryCredential = getTemporaryCredential' id
 
@@ -401,8 +401,8 @@ getTemporaryCredential = getTemporaryCredential' id
 getTemporaryCredentialWithScope :: MonadIO m
                                 => BS.ByteString -- ^ Scope parameter string
                                 -> OAuth         -- ^ OAuth Application
-                                -> Manager
                                 -> Credential
+                                -> Manager
                                 -> m Credential -- ^ Temporay Credential (Request Token & Secret).
 getTemporaryCredentialWithScope bs = getTemporaryCredential' (addScope bs)
 
@@ -411,8 +411,8 @@ getTemporaryCredentialWithScope bs = getTemporaryCredential' (addScope bs)
 getTemporaryCredentialProxy :: MonadIO m
                             => Maybe Proxy   -- ^ Proxy
                             -> OAuth         -- ^ OAuth Application
-                            -> Manager
                             -> Credential
+                            -> Manager
                             -> m Credential -- ^ Temporary Credential (Request Token & Secret).
 getTemporaryCredentialProxy p oa m c = getTemporaryCredential' (addMaybeProxy p) oa m c
 
@@ -420,8 +420,8 @@ getTemporaryCredentialProxy p oa m c = getTemporaryCredential' (addMaybeProxy p)
 getTemporaryCredential' :: MonadIO m
                         => (Request -> Request)       -- ^ Request Hook
                         -> OAuth                      -- ^ OAuth Application
-                        -> Manager
                         -> Credential
+                        -> Manager
                         -> m Credential    -- ^ Temporary Credential (Request Token & Secret).
 getTemporaryCredential' hook oa manager defaultCred = do
   let req = fromJust $ parseUrl $ oauthRequestUri oa
