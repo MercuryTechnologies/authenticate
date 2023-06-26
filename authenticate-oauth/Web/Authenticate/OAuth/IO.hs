@@ -32,7 +32,7 @@ import qualified Data.ByteString.Char8 as BS
 getTemporaryCredential :: MonadIO m
                        => OA.OAuth        -- ^ OAuth Application
                        -> m OA.Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredential = liftIO . withManager defaultManagerSettings . OA.getTemporaryCredential OA.emptyCredential
+getTemporaryCredential oa = liftIO . withManager defaultManagerSettings . OA.getTemporaryCredential oa OA.emptyCredential
 
 -- | Get temporary credential for requesting access token with Scope parameter.
 getTemporaryCredentialWithScope :: MonadIO m
