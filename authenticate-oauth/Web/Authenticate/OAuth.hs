@@ -414,7 +414,7 @@ getTemporaryCredentialProxy :: MonadIO m
                             -> Credential
                             -> Manager
                             -> m Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredentialProxy p oa m c = getTemporaryCredential' (addMaybeProxy p) oa m c
+getTemporaryCredentialProxy p oa m c = getTemporaryCredential' (addMaybeProxy p) oa c m
 
 
 getTemporaryCredential' :: MonadIO m
@@ -423,7 +423,7 @@ getTemporaryCredential' :: MonadIO m
                         -> Credential
                         -> Manager
                         -> m Credential    -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredential' hook oa manager defaultCred = do
+getTemporaryCredential' hook oa defaultCred manager = do
   let req = fromJust $ parseUrl $ oauthRequestUri oa
       crd = maybe id (insert "oauth_callback") (oauthCallback oa) $ defaultCred
   req' <- signOAuth' oa crd False addAuthHeader $ hook (req { method = "POST" })
