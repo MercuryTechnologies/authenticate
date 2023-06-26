@@ -414,7 +414,7 @@ getTemporaryCredentialProxy :: MonadIO m
                             -> Credential
                             -> Manager
                             -> m Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredentialProxy p oa m c = getTemporaryCredential' (addMaybeProxy p) oa c m
+getTemporaryCredentialProxy p oa c m = getTemporaryCredential' (addMaybeProxy p) oa c m
 
 
 getTemporaryCredential' :: MonadIO m
