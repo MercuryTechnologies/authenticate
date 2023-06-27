@@ -34,7 +34,8 @@ module Web.Authenticate.OAuth
       getAccessToken',
       getAccessTokenWith,
       -- * Utility Methods
-      paramEncode, addScope, addMaybeProxy
+      paramEncode, addScope, addMaybeProxy,
+      token, tokenSecret
     ) where
 
 import           Blaze.ByteString.Builder     (toByteString)
@@ -390,6 +391,7 @@ bodyHash req bodyHashMethod =
 -- | Get temporary credential for requesting acces token.
 getTemporaryCredential :: MonadIO m
                        => OAuth         -- ^ OAuth Application
+                       -> Credential
                        -> Manager
                        -> m Credential -- ^ Temporary Credential (Request Token & Secret).
 getTemporaryCredential = getTemporaryCredential' id
@@ -399,6 +401,7 @@ getTemporaryCredential = getTemporaryCredential' id
 getTemporaryCredentialWithScope :: MonadIO m
                                 => BS.ByteString -- ^ Scope parameter string
                                 -> OAuth         -- ^ OAuth Application
+                                -> Credential
                                 -> Manager
                                 -> m Credential -- ^ Temporay Credential (Request Token & Secret).
 getTemporaryCredentialWithScope bs = getTemporaryCredential' (addScope bs)
@@ -408,19 +411,21 @@ getTemporaryCredentialWithScope bs = getTemporaryCredential' (addScope bs)
 getTemporaryCredentialProxy :: MonadIO m
                             => Maybe Proxy   -- ^ Proxy
                             -> OAuth         -- ^ OAuth Application
+                            -> Credential
                             -> Manager
                             -> m Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredentialProxy p oa m = getTemporaryCredential' (addMaybeProxy p) oa m
+getTemporaryCredentialProxy p oa c m = getTemporaryCredential' (addMaybeProxy p) oa c m
 
 
 getTemporaryCredential' :: MonadIO m
                         => (Request -> Request)       -- ^ Request Hook
                         -> OAuth                      -- ^ OAuth Application
+                        -> Credential
                         -> Manager
                         -> m Credential    -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredential' hook oa manager = do
+getTemporaryCredential' hook oa defaultCred manager = do
   let req = fromJust $ parseUrl $ oauthRequestUri oa
-      crd = maybe id (insert "oauth_callback") (oauthCallback oa) $ emptyCredential
+      crd = maybe id (insert "oauth_callback") (oauthCallback oa) $ defaultCred
   req' <- signOAuth' oa crd False addAuthHeader $ hook (req { method = "POST" })
   rsp <- liftIO $ httpLbs req' manager
   if responseStatus rsp == status200

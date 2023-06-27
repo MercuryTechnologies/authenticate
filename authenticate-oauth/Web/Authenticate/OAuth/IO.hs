@@ -32,7 +32,7 @@ import qualified Data.ByteString.Char8 as BS
 getTemporaryCredential :: MonadIO m
                        => OA.OAuth        -- ^ OAuth Application
                        -> m OA.Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredential = liftIO . withManager defaultManagerSettings . OA.getTemporaryCredential
+getTemporaryCredential oa = liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredential oa OA.emptyCredential
 
 -- | Get temporary credential for requesting access token with Scope parameter.
 getTemporaryCredentialWithScope :: MonadIO m
@@ -40,7 +40,7 @@ getTemporaryCredentialWithScope :: MonadIO m
                                 -> OAuth         -- ^ OAuth Application
                                 -> m Credential -- ^ Temporay Credential (Request Token & Secret).
 getTemporaryCredentialWithScope bs oa =
-  liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredentialWithScope bs oa
+  liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredentialWithScope bs oa OA.emptyCredential
 
 
 -- | Get temporary credential for requesting access token via the proxy.
@@ -48,13 +48,13 @@ getTemporaryCredentialProxy :: MonadIO m
                             => Maybe Proxy   -- ^ Proxy
                             -> OAuth         -- ^ OAuth Application
                             -> m Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredentialProxy p oa = liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredential' (addMaybeProxy p) oa
+getTemporaryCredentialProxy p oa = liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredential' (addMaybeProxy p) oa OA.emptyCredential
 
 getTemporaryCredential' :: MonadIO m
                         => (Request -> Request)                                 -- ^ Request Hook
                         -> OAuth                      -- ^ OAuth Application
                         -> m Credential -- ^ Temporary Credential (Request Token & Secret).
-getTemporaryCredential' hook oa = liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredential' hook oa
+getTemporaryCredential' hook oa = liftIO $ withManager defaultManagerSettings $ OA.getTemporaryCredential' hook oa OA.emptyCredential
 
 
 -- | Get Access token.
